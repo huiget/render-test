@@ -19,7 +19,7 @@ app.get("/api/persons", (req, res) => {
     })
 });
 
-app.get("/api/persons/:id", (req, res) => {
+app.get("/api/persons/:id", (req, res, next) => {
     // console.log(req);
     Person.findById(req.params.id).then(person => {
         if (person) {
@@ -28,35 +28,62 @@ app.get("/api/persons/:id", (req, res) => {
             res.sendStatus(404).end();
         }
     }).catch(err => {
-        console.log(err);
-        res.sendStatus(500).end();
+
+        next(err)
     });
 });
 
-app.delete("/api/persons/:id", (req, res) => {
-    const id = Number(req.params.id);
-    persons = persons.filter((person) => person.id !== id);
-    res.sendStatus(204).end();
+app.delete("/api/persons/:id", (req, res, next) => {
+    Person.findByIdAndDelete(req.params.id).then(result => {
+        res.sendStatus(204).end();
+    }).catch(err => {
+        next(err)
+    })
 })
 
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res, next) => {
     const { name, number } = req.body;
     if (!name || !number) {
         return res.status(400).json({ error: "Name and number are required" });
     }
-    // if (persons.find((person) => person.name === name)) {
-    //     return res.status(400).json({ error: "Name is already taken" });
-    // }
-
     const person = new Person({ name, number });
     person.save().then(result => {
         res.json(result);
-    });
+    }).catch(err => {
+        next(err)
+    })
 });
 
-// app.get('/info', (req, res) => {
-//     res.send(`Phonebook has info for ${persons.length} people<br> ${new Date()}`)
-// })
+
+app.get('/info', (req, res) => {
+    Person.find({}).then(persons => {
+        res.send(`Phonebook has info for ${persons.length} people<br> ${new Date()}`)
+    })
+})
+
+
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+}
+
+// handler of requests with unknown endpoint
+app.use(unknownEndpoint)
+
+
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+
+    if (error.name === 'CastError') {
+        return response.status(400).send({ error: 'malformatted id' })
+    } else if (error.name === 'ValidationError') {
+        return response.status(400).json({ error: error.message })
+    }
+
+    next(error)
+}
+
+// this has to be the last loaded middleware.
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
