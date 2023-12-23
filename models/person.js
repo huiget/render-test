@@ -6,7 +6,7 @@ mongoose.set('strictQuery', false)
 mongoose.connect(url).then(() => {
     console.log('Connected to MongoDB')
 }).catch(err => {
-    console.log('error connecting to MongoDB:', err.message);
+    console.log('error connecting to MongoDB:', err.message)
 })
 
 const personSchema = new mongoose.Schema({
@@ -21,11 +21,11 @@ const personSchema = new mongoose.Schema({
         required: true,
         validate: {
             validator: function (v) {
-                return /^\d{2,3}-\d+$/.test(v);
+                return /^\d{2,3}-\d+$/.test(v)
             },
             message: props => `${props.value} is not a valid phone number!`
-        },
-    },
+        }
+    }
 })
 
 personSchema.set('toJSON', {
@@ -38,4 +38,4 @@ personSchema.set('toJSON', {
 
 const Person = mongoose.model('Person', personSchema)
 
-module.exports = Person;
+module.exports = Person
